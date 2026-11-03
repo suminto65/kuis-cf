@@ -1,7 +1,8 @@
 # Kuis Cloudflare — Tahap 1
-1. Unggah folder ini ke repo GitHub baru.
-2. Cloudflare → Workers & Pages → Create → Pages → Connect to Git. Build command: kosong. Output directory: `public`.
-3. Settings → Bindings (Production): tambah **Workers AI** (nama `AI`) dan **KV namespace** (nama `QUIZ_KV`; buat namespace dulu di Storage & Databases → KV).
-4. Settings → Variables and Secrets: tambah secret `ACCESS_CODE` (kode rahasia Bapak).
-5. Deploy ulang. Buka alamat *.pages.dev, isi kode akses, buat kuis.
-Catatan: drag-and-drop dashboard tidak menjalankan folder `functions`; pakai GitHub atau `wrangler pages deploy public`.
+Berjalan sebagai **Cloudflare Worker + static assets** (alamat *.workers.dev), atau sebagai Pages (folder `functions`).
+
+## Deploy sebagai Worker (yang dipakai sekarang)
+1. Ganti isi repo GitHub dengan isi folder ini (wrangler.jsonc, src/, functions/, public/).
+2. Cloudflare otomatis build ulang. Nama Worker di wrangler.jsonc harus sama dengan nama Worker di dashboard (`kuis-cf`).
+3. Workers AI dan KV (QUIZ_KV) sudah didaftarkan di wrangler.jsonc. Jika deploy menolak KV tanpa id: buka Storage & Databases → KV, salin ID namespace, isikan sebagai "id" di wrangler.jsonc.
+4. Settings → Variables and Secrets: secret `ACCESS_CODE` (tetap tersimpan antar deploy).
