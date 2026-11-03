@@ -1,0 +1,8 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kuis</title>
+<link rel="stylesheet" href="/katex/katex.min.css"><link rel="stylesheet" href="/style.css"></head>
+<body><div class="stu" id="m">Memuat kuis…</div>
+<script src="/katex/katex.min.js"></script><script src="/render.js"></script>
+<script>
+const id=location.pathname.split('/').pop();
+fetch('/api/quiz?id='+encodeURIComponent(id)).then(r=>r.ok?r.json():Promise.reject()).then(q=>{document.title=q.title;mountQuiz(document.getElementById('m'),q)}).catch(()=>{document.getElementById('m').textContent='Kuis tidak ditemukan.'});
+</script></body></html>

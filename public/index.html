@@ -1,0 +1,37 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pembuat Kuis</title>
+<link rel="stylesheet" href="/katex/katex.min.css"><link rel="stylesheet" href="/style.css"></head><body>
+<div class="app"><div class="card"><div class="kop"><img src="/logo.png" alt="Logo" style="width:52px;height:52px"><h2>Pembuat Kuis</h2></div>
+<label>Judul kuis</label><input id="ti" placeholder="mis. Pecahan Kelas 5">
+<label>Sumber materi (teks)</label><textarea id="txt" style="min-height:110px" placeholder="Tempel materi di sini"></textarea>
+<label>atau URL halaman materi</label><input id="url" placeholder="https://...">
+<label>Tipe soal</label><select id="tp"><option value="pg">Pilihan Ganda (PG)</option><option value="cb">Checkbox (PG Kompleks)</option><option value="us">Uraian Singkat</option></select>
+<label>Jumlah soal (1–15)</label><input id="n" type="number" min="1" max="15" value="10">
+<label>Durasi</label><select id="dur"><option value="0">Tanpa batas waktu</option><option value="30">30 menit</option></select>
+<label>Kode akses</label><input id="code" type="password">
+<button class="pri" id="go">Buat Kuis Sekarang</button></div>
+<div><div class="card menu"><button data-v="start">▶ Mulai Kuis</button><button data-v="manage">✎ Kelola Kuis</button><button data-v="print">🖨 Cetak Kuis</button><button data-v="export">⬇ Ekspor Kuis</button></div>
+<div class="card" id="main"><p style="text-align:center"><b>Belum ada kuis.</b><br>Isi formulir lalu tekan “Buat Kuis Sekarang”.</p></div></div></div>
+<div id="pr"></div>
+<script src="/katex/katex.min.js"></script><script src="/render.js"></script>
+<script>
+let quiz=null;const $=id=>document.getElementById(id),M=$('main');
+async function api(p,b){const r=await fetch(p,{method:'POST',headers:{'content-type':'application/json','x-code':$('code').value},body:JSON.stringify(b)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Gagal');return d}
+$('go').onclick=async()=>{if(!$('code').value)return alert('Isi kode akses dulu.');const b=$('go');b.disabled=true;b.textContent='Membuat soal…';
+ try{const d=await api('/api/generate',{text:$('txt').value,url:$('url').value,type:$('tp').value,count:+$('n').value});
+  quiz={title:$('ti').value||'Kuis',duration:+$('dur').value,questions:d.questions};show('start')}
+ catch(e){alert(e.message)}finally{b.disabled=false;b.textContent='Buat Kuis Sekarang'}};
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>quiz?show(b.dataset.v):alert('Buat kuis dulu.'));
+function show(v){clearInterval(window._qt);({start:()=>mountQuiz(M,quiz),manage,print:prn,export:exp})[v]()}
+function manage(){M.innerHTML='<h3>Kelola Kuis</h3>'+quiz.questions.map((x,i)=>`<div class=qc><b>${i+1}. (${x.type})</b>
+<textarea data-f=q data-i=${i}>${esc(x.q)}</textarea>`+(x.type!=='us'?`<label>Pilihan (satu per baris)</label><textarea data-f=o data-i=${i}>${esc(x.options.join('\n'))}</textarea>`:'')+
+`<label>Kunci (${x.type==='us'?'teks; pisahkan alternatif dengan |':'huruf, mis. B atau A,C'})</label><input data-f=a data-i=${i} value="${esc(ansText(x))}"><button data-d=${i} style="margin-top:8px">Hapus soal</button></div>`).join('')+'<button class=pri id=sv>Simpan Perubahan</button>';
+ M.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{sync();quiz.questions.splice(+b.dataset.d,1);manage()});$('sv').onclick=()=>{sync();show('start')}}
+function sync(){M.querySelectorAll('[data-f]').forEach(e=>{const x=quiz.questions[+e.dataset.i],f=e.dataset.f;
+ if(f=='q')x.q=e.value;else if(f=='o')x.options=e.value.split('\n').filter(s=>s.trim());
+ else if(x.type=='us')x.answer=e.value;else{const a=e.value.toUpperCase().split(/[^A-E]+/).filter(Boolean).map(c=>'ABCDE'.indexOf(c));x.answer=x.type=='cb'?a:a[0]}})}
+function prn(){const q=quiz.questions;$('pr').innerHTML=kop(quiz.title)+`<p>Nama: ____________________ Kelas: ______</p>`+q.map((x,i)=>`<p><b>${i+1}.</b> ${rich(x.q)}</p>`+(x.type=='us'?'<p>Jawab: ______________________</p>':x.options.map((o,j)=>`<div>${x.type=='cb'?'☐':'○'} ${'ABCDE'[j]}. ${rich(o)}</div>`).join(''))).join('')+
+ `<div class=pb><h3>Kunci Jawaban</h3>`+q.map((x,i)=>`<div>${i+1}. ${x.type=='us'?rich(String(x.answer).split('|')[0]):ansText(x)}</div>`).join('')+'</div>';window.print()}
+async function exp(){M.innerHTML='<p>Menyimpan kuis…</p>';try{const d=await api('/api/quiz',{...quiz});quiz.id=d.id;const u=location.origin+'/q/'+d.id;
+ M.innerHTML=`<h3>Kuis siap dibagikan</h3><p>Link ini bisa dibuka di Android, iPad, dan laptop:</p><input value="${u}" readonly onclick="this.select()"><p><button id=cp>Salin link</button> <a href="https://wa.me/?text=${encodeURIComponent(quiz.title+' '+u)}" target=_blank><button>Kirim lewat WhatsApp</button></a></p><p class=m>Di Google Sites: Sematkan → Dengan URL.</p>`;
+ $('cp').onclick=()=>navigator.clipboard.writeText(u).then(()=>$('cp').textContent='Tersalin ✔')}catch(e){M.innerHTML='<p>'+esc(e.message)+'</p>'}}
+</script></body></html>
